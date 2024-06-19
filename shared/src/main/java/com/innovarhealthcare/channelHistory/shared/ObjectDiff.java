@@ -1,40 +1,17 @@
-package com.kayyagari;
+package com.innovarhealthcare.channelHistory.shared;
 
-/*
-   Copyright [2024] [Kiran Ayyagari]
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.swing.JPanel;
-
+import com.kayyagari.objmeld.OgnlComparison;
+import com.mirth.connect.model.Channel;
+import com.mirth.connect.model.converters.ObjectXMLSerializer;
+import ognl.OgnlContext;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.DefaultBeanIntrospector;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.apache.commons.io.IOUtils;
 
-import com.kayyagari.objmeld.OgnlComparison;
-import com.mirth.connect.model.Channel;
-import com.mirth.connect.model.converters.ObjectXMLSerializer;
-
-import ognl.OgnlContext;
+import javax.swing.*;
+import java.nio.charset.Charset;
+import java.util.*;
 
 /**
  * @author Kiran Ayyagari (kayyagari@apache.org)
@@ -61,16 +38,8 @@ public class ObjectDiff {
     }
 
     public void create() throws Exception {
-        //Channel ch = (Channel)left;
-        //ch.getSourceConnector().getProperties().setPluginProperties(new HashSet<>());
         leftNodes = create(left);
         rightNodes = create(right);
-//        ch.getSourceConnector().setProperties(null);
-//        List<String> lst = exprsMap.get("sourceConnector");
-//        for(String expr : lst) {
-//            System.out.print(expr + "-->");
-//            System.out.println(Ognl.getValue(expr, ctx, left));
-//        }
     }
 
     private Map<String, FieldNode> create(Object root) throws Exception {

@@ -1,42 +1,32 @@
-package com.kayyagari;
-
 /*
-   Copyright [2024] [Kiran Ayyagari]
+ * This Source Code Form is subject to the terms of the
+ * Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed
+ * with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+package com.innovarhealthcare.channelHistory.client;
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+import com.innovarhealthcare.channelHistory.shared.RevisionInfo;
+import org.joda.time.Period;
+import org.json.JSONObject;
 
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
+import javax.swing.table.AbstractTableModel;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-
-import javax.swing.table.AbstractTableModel;
-
-import org.joda.time.Period;
 
 /**
  * @author Kiran Ayyagari (kayyagari@apache.org)
  */
 public class RevisionInfoTableModel extends AbstractTableModel {
 
-    private List<RevisionInfo> revisions;
+    private List<String> revisions;
 
-    private static DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+    private static DateFormat df = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
 
-    private static final String[] columnNames = {"Id", "Message", "Committer", "Date"};
+    private static final String[] columnNames = {"Commit Id", "Message", "Committer", "Date", "Server Id"};
 
-    public RevisionInfoTableModel(List<RevisionInfo> revisions) {
+    public RevisionInfoTableModel(List<String> revisions) {
         this.revisions = revisions;
     }
 
@@ -67,23 +57,35 @@ public class RevisionInfoTableModel extends AbstractTableModel {
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         Object val = null;
-        RevisionInfo r = revisions.get(rowIndex);
+        String r = revisions.get(rowIndex);
+        JSONObject rj = new JSONObject(r);
 
         switch (columnIndex) {
         case 0:
-            val = r.getShortHash();
+            val = rj.get("Hash");
             break;
 
         case 1:
-            val = r.getMessage();
+            val = rj.get("Message");
             break;
 
         case 2:
-            val = r.getCommitterName();
+            val = rj.get("CommitterName");
             break;
 
         case 3:
-            val = formatTime(r.getTime());
+
+            val = formatTime((Long) rj.get("Time"));
+            break;
+        case 4:
+            String msg = (String) rj.get("Message");
+            val = "";
+            if (msg.contains("auto-committed by Innovar Healthcare Git Plugin on Server Id")) {
+                int start = msg.indexOf("auto-committed by Innovar Healthcare Git Plugin on Server Id");
+                start = (int) start + 61;
+                val = msg.substring(start);
+            }
+
             break;
 
         default:
@@ -93,7 +95,17 @@ public class RevisionInfoTableModel extends AbstractTableModel {
     }
 
     public RevisionInfo getRevisionAt(int row) {
-        return revisions.get(row);
+        RevisionInfo revisionInfo = new RevisionInfo();
+        JSONObject rj = new JSONObject(revisions.get(row));
+
+
+        revisionInfo.setCommitterEmail((String) rj.get("CommitterEmail"));
+        revisionInfo.setCommitterName((String) rj.get("CommitterName"));
+        revisionInfo.setHash((String) rj.get("Hash"));
+        revisionInfo.setMessage((String) rj.get("Message"));
+        revisionInfo.setTime((Long) rj.get("Time"));
+
+        return revisionInfo;
     }
 
     private String formatTime(long t) {

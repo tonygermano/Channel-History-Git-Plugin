@@ -1,40 +1,27 @@
-package com.kayyagari;
+package com.innovarhealthcare.channelHistory.client;
 
-/*
-   Copyright [2024] [Kiran Ayyagari]
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
+import com.innovarhealthcare.channelHistory.shared.VersionControlConstants;
+import com.kaurpalang.mirth.annotationsplugin.annotation.MirthClientClass;
 import com.mirth.connect.client.ui.AbstractChannelTabPanel;
 import com.mirth.connect.plugins.ChannelTabPlugin;
+import lombok.SneakyThrows;
 
 /**
  * @author Kiran Ayyagari (kayyagari@apache.org)
  */
+@MirthClientClass
 public class VersionHistoryTabPlugin extends ChannelTabPlugin {
 
     private VersionHistoryTabPanel tabPanel;
 
     public VersionHistoryTabPlugin(String name) {
-        super(GitExtServletInterface.PLUGIN_NAME);
-        System.out.println("instantiated VersionHistoryTabPlugin " + name);
+        super("Innovar Channel History");
     }
 
+    @SneakyThrows
     @Override
     public void start() {
         tabPanel = new VersionHistoryTabPanel(parent);
-        System.out.println("started VersionHistoryTabPlugin");
     }
 
     @Override
@@ -44,7 +31,7 @@ public class VersionHistoryTabPlugin extends ChannelTabPlugin {
 
     @Override
     public String getPluginPointName() {
-        return "Version History";
+        return "Innovar Channel History";
     }
 
 }

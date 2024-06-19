@@ -1,4 +1,4 @@
-package com.kayyagari;
+package com.innovarhealthcare.channelHistory.shared;
 
 // copy of https://github.com/apache/commons-ognl/blob/master/src/main/java/org/apache/commons/ognl/DefaultMemberAccess.java
 
@@ -21,20 +21,20 @@ package com.kayyagari;
  * under the License.
  */
 
+import ognl.MemberAccess;
+import ognl.OgnlContext;
+
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.util.Map;
-
-import ognl.MemberAccess;
 
 /**
  * This class provides methods for setting up and restoring access in a Field. Java 2 provides access utilities for
  * setting and getting fields that are non-public. This object provides coarse-grained access controls to allow access
  * to private, protected and package protected members. This will apply to all classes and members.
  */
-public class DefaultMemberAccess implements MemberAccess
-{
+public class DefaultMemberAccess implements MemberAccess {
     private boolean allowPrivateAccess = false;
 
     private boolean allowProtectedAccess = false;
@@ -149,5 +149,20 @@ public class DefaultMemberAccess implements MemberAccess
             }
         }
         return result;
+    }
+
+    @Override
+    public Object setup(OgnlContext ognlContext, Object o, Member member, String s) {
+        return null;
+    }
+
+    @Override
+    public void restore(OgnlContext ognlContext, Object o, Member member, String s, Object o1) {
+
+    }
+
+    @Override
+    public boolean isAccessible(OgnlContext ognlContext, Object o, Member member, String s) {
+        return false;
     }
 }

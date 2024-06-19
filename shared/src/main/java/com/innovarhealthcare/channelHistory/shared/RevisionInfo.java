@@ -1,4 +1,4 @@
-package com.kayyagari;
+package com.innovarhealthcare.channelHistory.shared;
 
 /*
    Copyright [2024] [Kiran Ayyagari]

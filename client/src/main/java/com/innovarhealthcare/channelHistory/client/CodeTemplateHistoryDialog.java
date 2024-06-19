@@ -1,35 +1,19 @@
+/*
+ * This Source Code Form is subject to the terms of the
+ * Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed
+ * with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package com.innovarhealthcare.channelHistory.client;
 
-import com.innovarhealthcare.channelHistory.shared.interfaces.channelHistoryServletInterface;
 import com.innovarhealthcare.channelHistory.shared.RevisionInfo;
-
-/*
-   Copyright [2024] [Kiran Ayyagari]
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
-import com.mirth.connect.client.ui.AbstractChannelTabPanel;
+import com.innovarhealthcare.channelHistory.shared.interfaces.channelHistoryServletInterface;
 import com.mirth.connect.client.ui.Frame;
 import com.mirth.connect.client.ui.PlatformUI;
-import com.mirth.connect.model.Channel;
-import com.mirth.connect.model.InvalidChannel;
+import com.mirth.connect.model.codetemplates.CodeTemplate;
 import com.mirth.connect.model.converters.ObjectXMLSerializer;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -41,9 +25,10 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @author Kiran Ayyagari (kayyagari@apache.org)
+ * @author Jim(Zi Min) Weng
+ * @create 2024-05-07 8:46 AM
  */
-public class VersionHistoryTabPanel extends AbstractChannelTabPanel {
+public class CodeTemplateHistoryDialog extends JDialog {
     private static Logger log = Logger.getLogger(VersionHistoryTabPanel.class);
 
     private RevisionInfoTable tblRevisions;
@@ -54,15 +39,27 @@ public class VersionHistoryTabPanel extends AbstractChannelTabPanel {
     private String cid;
 
     private JPopupMenu popupMenu;
-    
+
     private JMenuItem mnuShowDiff;
 
-    private Frame parent;
-    
-    private ObjectXMLSerializer serializer;
+    private Frame parent = PlatformUI.MIRTH_FRAME;
 
-    public VersionHistoryTabPanel(Frame parent) {
-        this.parent = parent;
+    private ObjectXMLSerializer serializer;
+    public CodeTemplateHistoryDialog(Window parent, String codeTemplateId) {
+        super(parent);
+        setTitle("Code Template History");
+        setPreferredSize(new Dimension(1200, 700));
+        Dimension dlgSize = getPreferredSize();
+        Dimension frmSize = parent.getSize();
+        Point loc = parent.getLocation();
+
+        if ((frmSize.width == 0 && frmSize.height == 0) || (loc.x == 0 && loc.y == 0)) {
+            setLocationRelativeTo(null);
+        } else {
+            setLocation((frmSize.width - dlgSize.width) / 2 + loc.x, (frmSize.height - dlgSize.height) / 2 + loc.y);
+        }
+        cid = codeTemplateId;
+
         this.serializer = ObjectXMLSerializer.getInstance();
         setLayout(new BorderLayout());
 
@@ -70,7 +67,7 @@ public class VersionHistoryTabPanel extends AbstractChannelTabPanel {
         tblRevisions.setRowSelectionAllowed(true);
         tblRevisions.setColumnSelectionAllowed(false);
         tblRevisions.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        
+
         popupMenu = new JPopupMenu();
         mnuShowDiff = new JMenuItem("Show Diff");
         mnuShowDiff.addActionListener(new ActionListener() {
@@ -101,34 +98,24 @@ public class VersionHistoryTabPanel extends AbstractChannelTabPanel {
             }
         };
         tblRevisions.addMouseListener(popupListener);
-
         JScrollPane scrollPane = new JScrollPane(tblRevisions);
-
         scrollPane.addMouseListener(popupListener);
         add(scrollPane);
+        load();
 
-        parent.addTask("loadHistory", "Refresh history", "Refresh version history.", "", new ImageIcon(Frame.class.getResource("images/arrow_refresh.png")), parent.channelEditTasks, parent.channelEditPopupMenu, this);
+
+        pack();
+        setModal(true);
+        setVisible(true);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+
     }
-
-    @Override
-    public void load(Channel channel) {
-        cid = channel.getId();
+    public void load() {
         this.loadHistory(false);
     }
-
-    @Override
-    public void save(Channel channel) {
-        log.info("saving channel " + channel.getId());
-    }
-
-    public void loadHistory() {
-        this.loadHistory(true);
-    }
-
     public void loadHistory(boolean shouldNotifyOnComplete) {
-        SwingUtilities.invokeLater(new LoadGitHistoryRunnable(shouldNotifyOnComplete));
+        SwingUtilities.invokeLater(new CodeTemplateHistoryDialog.LoadGitHistoryRunnable(shouldNotifyOnComplete));
     }
-    
     private void showDiffWindow() {
         popupMenu.setVisible(false);
         int[] rows = tblRevisions.getSelectedRows();
@@ -137,16 +124,16 @@ public class VersionHistoryTabPanel extends AbstractChannelTabPanel {
         RevisionInfo ri2 = model.getRevisionAt(rows[1]);
 
         try {
-            String left = gitServlet.getContent(cid, ri1.getHash(), "Channel");
-            Channel leftCh = parse(left, ri1.getShortHash());
-            String right = gitServlet.getContent(cid, ri2.getHash(),"Channel");
-            Channel rightCh = parse(right, ri2.getShortHash());
+            String left = gitServlet.getContent(cid, ri1.getHash(), "codetemplate");
+            CodeTemplate leftCodeTemplate = parse(left, ri1.getShortHash());
+            String right = gitServlet.getContent(cid, ri2.getHash(), "codetemplate");
+            CodeTemplate rightCodeTemplate = parse(right, ri2.getShortHash());
 
-            String labelPrefix = leftCh.getName();
+            String labelPrefix = leftCodeTemplate.getName();
             String leftLabel = labelPrefix + " Time: " + df.format(new Date(ri1.getTime())) + " Committed by " +ri1.getCommitterName();
             String rightLabel = labelPrefix + " Time: " + df.format(new Date(ri2.getTime())) + " Committed by " +ri1.getCommitterName();
 
-            DiffWindow dw = DiffWindow.create("Channel Diff", leftLabel, rightLabel, leftCh, rightCh, left, right, parent);
+            DiffWindow dw = DiffWindow.create("Code Template Diff", leftLabel, rightLabel, leftCodeTemplate, rightCodeTemplate, left, right, this);
             dw.setSize(parent.getWidth() - 10, parent.getHeight()-10);
             dw.setVisible(true);
         }
@@ -154,14 +141,10 @@ public class VersionHistoryTabPanel extends AbstractChannelTabPanel {
             PlatformUI.MIRTH_FRAME.alertThrowable(PlatformUI.MIRTH_FRAME, e);
         }
     }
-    
-    private Channel parse(String xml, String rev) {
-        Channel ch = serializer.deserialize(xml, Channel.class);
-        if(ch instanceof InvalidChannel) {
-            throw new IllegalStateException("could not parse channel at revision " + rev);
-        }
-        
-        return ch;
+    private CodeTemplate parse(String xml, String rev) {
+        CodeTemplate ct = serializer.deserialize(xml, CodeTemplate.class);
+
+        return ct;
     }
 
     private class LoadGitHistoryRunnable implements Runnable {
@@ -181,9 +164,10 @@ public class VersionHistoryTabPanel extends AbstractChannelTabPanel {
                 }
 
                 // then fetch revisions
-                List<String> revisions = gitServlet.getHistory(cid, "Channel");
+                List<String> revisions = gitServlet.getHistory(cid, "Codetemplate");
                 RevisionInfoTableModel model = new RevisionInfoTableModel(revisions);
                 tblRevisions.setModel(model);
+
                 if (shouldNotifyOnComplete) {
                     PlatformUI.MIRTH_FRAME.alertInformation(parent, "History refreshed!");
                 }
@@ -192,5 +176,4 @@ public class VersionHistoryTabPanel extends AbstractChannelTabPanel {
             }
         }
     }
-
 }

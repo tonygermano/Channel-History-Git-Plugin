@@ -1,81 +1,65 @@
-package com.kayyagari;
-
 /*
-   Copyright [2024] [Kiran Ayyagari]
+ * This Source Code Form is subject to the terms of the
+ * Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed
+ * with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+package com.innovarhealthcare.channelHistory.client;
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+import com.innovarhealthcare.channelHistory.shared.ObjectDiff;
+import com.kayyagari.objmeld.OgnlComparison;
+import com.kayyagari.objmeld.StringContent;
+import com.mirth.connect.client.ui.ChannelSetup;
+import com.mirth.connect.client.ui.MirthDialog;
+import com.mirth.connect.client.ui.PlatformUI;
+import com.mirth.connect.model.Channel;
 
-       http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
-import java.awt.BorderLayout;
+import javax.swing.*;
+import java.awt.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.Collections;
-
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-
-import org.apache.commons.io.IOUtils;
-
-import com.kayyagari.objmeld.OgnlComparison;
-import com.kayyagari.objmeld.StringContent;
-import com.mirth.connect.client.ui.ChannelSetup;
-import com.mirth.connect.model.Channel;
-import com.mirth.connect.model.converters.ObjectXMLSerializer;
 
 /**
  * The main window for showing diff.
  * 
  * @author Kiran Ayyagari (kayyagari@apache.org)
  */
-public class DiffWindow extends JDialog {
+public class DiffWindow extends MirthDialog {
     private Object left;
     private Object right;
     private String leftLabel;
     private String rightLabel;
     private JTabbedPane tabbedPane;
     private JPanel objDiffPanel = null; // object diff panel
-    
-    private String leftStrContent;
-    private String rightStrContent;
+
     
     private JPanel labelPanel;
-    private DiffWindow(String title, String leftLabel, String rightLabel, Object left, Object right) {
+    private DiffWindow(String title, String leftLabel, String rightLabel, Object left, Object right,Window parent) {
+        super(parent);
         this.left = left;
         this.right = right;
         this.leftLabel = leftLabel;
         this.rightLabel = rightLabel;
         tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 
-        labelPanel = new JPanel(new BorderLayout());
-        labelPanel.add(new JLabel("\t" + leftLabel), BorderLayout.EAST);
-        labelPanel.add(new JLabel(rightLabel + "\t"), BorderLayout.WEST);
+        this.labelPanel = new JPanel(new BorderLayout());
+        this.labelPanel.add(new JLabel("\t" + leftLabel), BorderLayout.EAST);
+        this.labelPanel.add(new JLabel(rightLabel + "\t"), BorderLayout.WEST);
 
         setTitle(title);
         add(tabbedPane);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(PlatformUI.MIRTH_FRAME);
     }
 
-    public static DiffWindow create(String title, String leftLabel, String rightLabel, Object leftObj, Object rightObj, String leftStrContent, String rightStrContent) {
-        DiffWindow dd = new DiffWindow(title, leftLabel, rightLabel, leftObj, rightObj);
+    public static DiffWindow create(String title, String leftLabel, String rightLabel, Object leftObj, Object rightObj, String leftStrContent, String rightStrContent, Window parent) {
+        DiffWindow dd = new DiffWindow(title, leftLabel, rightLabel, leftObj, rightObj, parent);
+        dd.prepareTextView(leftStrContent, rightStrContent);
         dd.prepareObjectView();
         //dd.prepareChannelView();
-        dd.prepareTextView(leftStrContent, rightStrContent);
+
         return dd;
     }
     
@@ -99,6 +83,17 @@ public class DiffWindow extends JDialog {
         panel.add(new JScrollPane(objDiffPanel), BorderLayout.CENTER);
         tabbedPane.add("Object View", panel);
     }
+    private void prepareTextView(String leftStrContent, String rightStrContent) {
+        JPanel panel = OgnlComparison.prepare(Collections.singletonList(new StringContent("", leftStrContent)), Collections.singletonList(new StringContent("", rightStrContent)), true);
+        JPanel panel2 = new JPanel(new BorderLayout());
+        JPanel infoPanel = new JPanel(new BorderLayout());
+        infoPanel.add(new JLabel("\t" + this.leftLabel), BorderLayout.EAST);
+        infoPanel.add(new JLabel(this.rightLabel + "\t"), BorderLayout.WEST);
+        panel2.add(infoPanel, BorderLayout.NORTH);
+
+        panel2.add(panel);
+        tabbedPane.add("XML View", panel2);
+    }
     
     private void prepareChannelView() {
         if(!(left instanceof Channel && right instanceof Channel)) {
@@ -118,26 +113,7 @@ public class DiffWindow extends JDialog {
         tabbedPane.add("Channel View", channelPane);
     }
     
-    private void prepareTextView(String leftStrContent, String rightStrContent) {
-        JPanel panel = OgnlComparison.prepare(Collections.singletonList(new StringContent("", leftStrContent)), Collections.singletonList(new StringContent("", rightStrContent)), true);
-        JPanel panel2 = new JPanel(new BorderLayout());
-        panel2.add(panel);
-        tabbedPane.add("XML View", panel2);
-    }
+
     
-    public static void main(String[] args) throws Exception {
-        ObjectXMLSerializer serializer = ObjectXMLSerializer.getInstance();
-        serializer.init("3.9.1");
-        
-        String chXml1 = IOUtils.resourceToString("channel-for-diffing-version1.xml", Charset.forName("utf-8"), ObjectDiff.class.getClassLoader());
-        Channel chLeft = serializer.deserialize(chXml1, Channel.class);
-        
-        String chXml2 = IOUtils.resourceToString("channel-for-diffing-version2.xml", Charset.forName("utf-8"), ObjectDiff.class.getClassLoader());
-        Channel chRight = serializer.deserialize(chXml2, Channel.class);
-        
-        DiffWindow dw = DiffWindow.create("Channel Diff", "left rev abcd", "right rev efgh", chLeft, chRight, chXml1, chXml2);
-        dw.validate();
-        dw.setSize(1100, 700);
-        dw.setVisible(true);
-    }
+
 }

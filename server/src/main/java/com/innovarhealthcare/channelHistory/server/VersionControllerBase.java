@@ -1,10 +1,10 @@
-package com.kayyagari;
+package com.innovarhealthcare.channelHistory.server;
 
-import org.eclipse.jgit.lib.PersonIdent;
-
+import com.mirth.connect.donkey.server.Donkey;
 import com.mirth.connect.model.ServerEventContext;
 import com.mirth.connect.model.User;
 import com.mirth.connect.server.controllers.UserController;
+import org.eclipse.jgit.lib.PersonIdent;
 
 /**
  * @author Kiran Ayyagari (kayyagari@apache.org)
@@ -15,6 +15,7 @@ public abstract class VersionControllerBase {
     protected PersonIdent getCommitter(ServerEventContext sec) {
         try {
             User user = userController.getUser(sec.getUserId(), null);
+
             String username = user.getUsername();
             String email = user.getEmail();
             if(email == null) {
